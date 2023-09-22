@@ -1,0 +1,20 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: birthday-app
+  namespace: revolut
+  annotations:
+    kubernetes.io/ingress.class: gce
+spec:
+  rules:
+  - host: birthday-app.rdemo.wvw.icu
+    http:
+      paths:
+      - path: /hello
+        pathType: Prefix
+        backend:
+          service:
+              name: birthday-app
+              port:
+                name: http

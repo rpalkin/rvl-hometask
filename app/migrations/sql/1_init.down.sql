@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS rvl_birthdays;
