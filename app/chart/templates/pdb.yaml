@@ -1,0 +1,16 @@
+{{- if .Values.pdb.enabled -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "birthday_chart.fullname" . }}-pdb
+spec:
+  {{ with .Values.pdb.minAvailable }}
+  minAvailable: {{ . }}
+  {{ end }}
+  {{ with .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ . }}
+  {{ end }}
+  selector:
+    matchLabels:
+      {{- include "birthday_chart.selectorLabels" . | nindent 6 }}
+{{- end -}}
