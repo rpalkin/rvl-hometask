@@ -111,6 +111,8 @@ make gcp-deploy
 ![GCP system diagram](./gcp/diagram.svg)
 
 ## Future improvements
+* Setup in-cluster metrics collector (e.g. vmagent or gke managed) and send app metrics (supported by application) to Cloud Managed Service for Prometheus (or any other metrics solution)
+* Setup in-cluster logging collector (e.g. fluentbit) and send app logs to Cloud Logging (or any other logging solution)
 * Depending on the requirements and application usage patterns, it might be worth to consider using a cache layer (e.g. in-cluster or Memorystore Redis) to reduce the number of database queries
 * Another performance related improvement could be to use additional read-only replicas of the database to reduce the load on the master instance
 * Use GitOps approach to deploy the application to the cluster (e.g. ArgoCD)
