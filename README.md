@@ -21,7 +21,7 @@ DB_NAMESPACE - namespace for the Service heading to the database instance (GCP d
 DB_NAME - database name
 DB_USERNAME - database username
 DB_PASSWORD - database password
-NAMESPACE - namespace for the application (should match the namespace in the app and migration deployment)
+NAMESPACE - namespace for the application
 IMAGE_TAG - tag for the application and migration image
 ```
 #### GCP deploy parameters
@@ -107,7 +107,7 @@ make gcp-down
 make gcp-deploy
 ```
 
-## GCP system diagram
+## GCP system diagram (minimal dev environment)
 ![GCP system diagram](./gcp/diagram.svg)
 
 ## Future improvements
