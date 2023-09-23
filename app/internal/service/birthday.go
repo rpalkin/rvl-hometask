@@ -34,9 +34,10 @@ func (b *BirthdayService) GetDaysToBirthday(username string) (int, error) {
 		return 0, err
 	}
 	nextBirthday := time.Date(time.Now().Year(), birthday.Month(), birthday.Day(), 0, 0, 0, 0, time.UTC)
-	if nextBirthday.Before(time.Now()) {
+	today := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), 0, 0, 0, 0, time.UTC)
+	if nextBirthday.Before(today) {
 		nextBirthday = nextBirthday.AddDate(1, 0, 0)
 	}
-	diff := int(nextBirthday.Sub(time.Now()).Hours() / 24)
+	diff := int(nextBirthday.Sub(today).Hours() / 24)
 	return diff, nil
 }

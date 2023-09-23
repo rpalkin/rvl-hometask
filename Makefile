@@ -38,17 +38,19 @@ minikube-up: build ## Run application in minikube environment
 	kustomize build ./local/env | kubectl apply -f -
 	kubectl wait --for=condition=Ready pod -l app=postgres -n postgres --timeout=120s
 
-	# Run migrations
-	envsubst < ./app/migrations/deploy/migrations.env.template > ./app/migrations/deploy/migrations.env
-	cd ./app/migrations/deploy && kustomize edit set image birthday-migrations=$(MIGRATION_IMAGE):$(IMAGE_TAG)
-	kustomize build ./app/migrations/deploy | kubectl apply -f -
-	kubectl wait --for=condition=Complete job/birthday-migrations -n $(NAMESPACE) --timeout=120s
-	kubectl delete job/birthday-migrations -n $(NAMESPACE)
-
-	#Run/update application
-	envsubst < ./app/deploy/app.env.template > ./app/deploy/app.env
-	cd ./app/deploy && kustomize edit set image birthday-app=$(IMAGE):$(IMAGE_TAG)
-	kustomize build ./app/deploy | kubectl apply -f -
+	# Run application
+	helm upgrade --install birthday-app ./app/chart \
+		-n $(NAMESPACE) \
+		--create-namespace \
+		--set image.tag=$(IMAGE_TAG) \
+		--set image.repository=$(IMAGE) \
+		--set migration.image.repository=$(MIGRATION_IMAGE) \
+		--set migration.image.tag=$(IMAGE_TAG) \
+		--set appConfig.dbHost=$(DB_HOST) \
+		--set appConfig.dbPort=$(DB_PORT) \
+		--set appConfig.dbUser=$(DB_USERNAME) \
+		--set appConfig.dbPassword=$(DB_PASSWORD) \
+		--set appConfig.dbName=$(DB_NAME)
 
 minikube-test: ## Run application functional tests in minikube environment
 	bash ./local/minikube-test.sh
@@ -77,15 +79,6 @@ prepare-gcp-deploy: ## Prepare environment variables for GCP deploy
 	$(eval export CLOUDSQL_HOST=$(shell terraform -chdir=./gcp output -raw cloudsql_host))
 	gcloud container clusters get-credentials birthday-cluster --location=$(GOOGLE_REGION)
 
-gcp-refresh:
-	terraform -chdir=./gcp plan \
-		-var="gcloud_project_id=$(GOOGLE_PROJECT_ID)" \
-		-var="gcloud_region=$(GOOGLE_REGION)" \
-	 	-var="db_user=$(DB_USERNAME)" \
-	 	-var="db_password=$(DB_PASSWORD)" \
-	 	-var="db_name=$(DB_NAME)" \
-		-var="dns_zone=$(DNS_ZONE)"
-
 gcp-down: ## Destroy GCP environment
 	terraform -chdir=./gcp destroy -auto-approve \
 		-var="gcloud_project_id=$(GOOGLE_PROJECT_ID)" \
@@ -96,19 +89,22 @@ gcp-down: ## Destroy GCP environment
 		-var="dns_zone=$(DNS_ZONE)"
 
 cloud-build: prepare-gcp-deploy ## Build docker images in GCP
-#	gcloud builds submit --tag $(IMAGE):$(IMAGE_TAG) ./app
-#	gcloud builds submit --tag $(MIGRATION_IMAGE):$(IMAGE_TAG) ./app/migrations
+	gcloud builds submit --tag $(IMAGE):$(IMAGE_TAG) ./app
+	gcloud builds submit --tag $(MIGRATION_IMAGE):$(IMAGE_TAG) ./app/migrations
 
 gcp-deploy: cloud-build ## Deploy and update application in GCP
 	$(eval export)
-	# Run migrations
-	envsubst < ./app/migrations/deploy/migrations.env.template > ./app/migrations/deploy/migrations.env
-	cd ./app/migrations/deploy && kustomize edit set image birthday-migrations=$(MIGRATION_IMAGE):$(IMAGE_TAG)
-	kustomize build ./app/migrations/deploy | kubectl apply -f -
-	kubectl wait --for=condition=Complete job/birthday-migrations -n $(NAMESPACE) --timeout=120s
-	kubectl delete job/birthday-migrations -n $(NAMESPACE)
 
-	#Run/update application
-	envsubst < ./app/deploy/app.env.template > ./app/deploy/app.env
-	cd ./app/deploy && kustomize edit set image birthday-app=$(IMAGE):$(IMAGE_TAG)
-	kustomize build ./app/deploy | kubectl apply -f -
+	# Run/update application
+	helm upgrade --install birthday-app ./app/chart \
+		-n $(NAMESPACE) \
+		--create-namespace \
+		--set image.tag=$(IMAGE_TAG) \
+		--set image.repository=$(IMAGE) \
+		--set migration.image.repository=$(MIGRATION_IMAGE) \
+		--set migration.image.tag=$(IMAGE_TAG) \
+		--set appConfig.dbHost=$(DB_HOST) \
+		--set appConfig.dbPort=$(DB_PORT) \
+		--set appConfig.dbUser=$(DB_USERNAME) \
+		--set appConfig.dbPassword=$(DB_PASSWORD) \
+		--set appConfig.dbName=$(DB_NAME)

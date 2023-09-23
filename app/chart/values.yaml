@@ -1,0 +1,99 @@
+# Default values for birthday_chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+
+image:
+  repository: birthday-app
+  pullPolicy: IfNotPresent
+  tag: ""
+
+migration:
+  enabled: true
+  image:
+    repository: birthday-app
+    pullPolicy: IfNotPresent
+    tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+  metricsPort: 8081
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: '8081'
+    prometheus.io/scrape: 'true'
+
+ingress:
+  enabled: true
+  className: "gce"
+  annotations: {}
+  hosts:
+    - host: birthday-app.rdemo.wvw.icu
+      paths:
+        - path: /hello/
+          pathType: Prefix
+  tls: []
+
+resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - birthday-app
+          topologyKey: topology.kubernetes.io/zone
+
+appConfig:
+  appPort: 8080
+  metricsPort: 8081
+  logLevel: info
+  dbHost: postgres.postgres.svc.cluster.local
+  dbPort: 5432
+  dbName: rvl
+  dbUsername: rvl
+  dbPassword: rvl

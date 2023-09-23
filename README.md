@@ -114,6 +114,12 @@ make gcp-deploy
 * Depending on the requirements and application usage patterns, it might be worth to consider using a cache layer (e.g. in-cluster or Memorystore Redis) to reduce the number of database queries
 * Another performance related improvement could be to use additional read-only replicas of the database to reduce the load on the master instance
 * Use GitOps approach to deploy the application to the cluster (e.g. ArgoCD)
+* Use Secret Manager to store database password. Inject it to the application using init container with tools like [secret-init](https://github.com/doitintl/secrets-init)
+* Enable TLS for database connection or use Cloud SQL Proxy
+* (*) Use in-cluster ingress controller (e.g. Istio Ingress Gateway or Nginx Ingress Controller) behind Cloud Load Balancer to expose the application to the internet to increase flexibility (limited functionality of GCE Ingress) and pace of development (GCE ingress takes too long to provision ingress changes) 
+
+## Full GCP system diagram
+![GCP system diagram](./gcp/diagram-full.svg)
 
 ## Demo
 Demo is available at [http://birthday-app.rdemo.wvw.icu/hello/admin](http://birthday-app.rdemo.wvw.icu/hello/admin)

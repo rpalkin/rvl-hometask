@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "birthday_chart.fullname" . }}
+  labels:
+    {{- include "birthday_chart.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "birthday_chart.selectorLabels" . | nindent 6 }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "birthday_chart.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "birthday_chart.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: RVL_APP_PORT
+              value: {{ .Values.appConfig.appPort | quote }}
+            - name: RVL_APP_METRICS_PORT
+              value: {{ .Values.appConfig.metricsPort | quote }}
+            - name: RVL_APP_LEVEL
+              value: {{ .Values.appConfig.logLevel }}
+            - name: RVL_DB_HOST
+              value: {{ .Values.appConfig.dbHost }}
+            - name: RVL_DB_PORT
+              value: {{ .Values.appConfig.dbPort | quote }}
+            - name: RVL_DB_USERNAME
+              value: {{ .Values.appConfig.dbUser }}
+            - name: RVL_DB_PASSWORD
+              value: {{ .Values.appConfig.dbPassword }}
+            - name: RVL_DB_DBNAME
+              value: {{ .Values.appConfig.dbName }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.appConfig.appPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.appConfig.metricsPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
